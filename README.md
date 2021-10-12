@@ -1,2 +1,7 @@
-# Advanced-OpenGL-Examples
-Here some advanced examples of OpenGL will be presented
+# IndirectDraw
+
+## 材质不一样、有的是透明的
+
+![](Img/show.png)
+
+![](Img/code.png)
