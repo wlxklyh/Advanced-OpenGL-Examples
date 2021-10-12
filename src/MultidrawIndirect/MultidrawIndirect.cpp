@@ -99,7 +99,7 @@ namespace
         0,1,2
     };
 
-    const GLchar* gVertexShaderSource[] =
+    const GLchar* gVertexGreenShaderSource[] =
     {
         "#version 430 core\n"
 
@@ -119,7 +119,7 @@ namespace
         "}\n"
     };
 
-    const GLchar* gFragmentShaderSource[] =
+    const GLchar* gFragmentGreenShaderSource[] =
     {
         "#version 430 core\n"
 
@@ -132,17 +132,56 @@ namespace
 
         "void main(void)\n"
         "{\n"
-        "  color = texture(textureArray, vec3(uv.x, uv.y, drawID) );\n"
+        "  color = vec4(0,1,0,0.05);\n" //texture(textureArray, vec3(uv.x, uv.y, drawID) );\n"
         "}\n"
     };
 
+    const GLchar* gVertexRedShaderSource[] =
+    {
+        "#version 430 core\n"
+
+        "layout (location = 0 ) in vec2 position;\n"
+        "layout (location = 1 ) in vec2 texCoord;\n"
+        "layout (location = 2 ) in uint drawid;\n"
+        "layout (location = 3 ) in mat4 instanceMatrix;\n"
+
+        "layout (location = 0 ) out vec2 uv;\n"
+        "layout (location = 1 ) flat out uint drawID;\n"
+
+        "void main(void)\n"
+        "{\n"
+        "  uv = texCoord;\n"
+        "  drawID = drawid;\n"
+        "  gl_Position = instanceMatrix * vec4(position,0.0,1.0);\n"
+        "}\n"
+    };
+
+    const GLchar* gFragmentRedShaderSource[] =
+    {
+        "#version 430 core\n"
+
+        "layout (location = 0 ) in vec2 uv;\n"
+        "layout (location = 1 ) flat in uint drawID;\n"
+
+        "layout (location = 0) out vec4 color;\n"
+
+        "layout (binding = 0) uniform sampler2DArray textureArray;\n"
+
+        "void main(void)\n"
+        "{\n"
+        "  color = vec4(1,0,0,0.05);\n"
+        "}\n"
+    };
+
+    
     GLuint gVAO(0);
     GLuint gArrayTexture(0);
     GLuint gVertexBuffer(0);
     GLuint gElementBuffer(0);
     GLuint gIndirectBuffer(0);
     GLuint gMatrixBuffer(0);
-    GLuint gProgram(0);
+    GLuint gProgramGreen(0);
+    GLuint gProgramRed(0);
 
     float gMouseX(0);
     float gMouseY(0);
@@ -385,9 +424,9 @@ int main()
     glClearColor(1.0, 1.0, 1.0, 0.0);
 
     //Create and bind the shader program
-    gProgram = CompileShaders(gVertexShaderSource, gFragmentShaderSource);
-    glUseProgram(gProgram);
-
+    gProgramGreen = CompileShaders(gVertexGreenShaderSource, gFragmentGreenShaderSource);
+    gProgramRed = CompileShaders(gVertexRedShaderSource, gFragmentRedShaderSource);
+    
     GenerateGeometry();
     GenerateArrayTexture();
 
@@ -401,6 +440,10 @@ int main()
     int i = 0;
     while (!glfwWindowShouldClose(window))
     {
+        i++;
+        
+        
+        
         // input
         processInput(window);
 
@@ -417,14 +460,32 @@ int main()
         generateDrawCommands();
 
         //populate light uniform
-        glUniform2f(glGetUniformLocation(gProgram, "light_pos"), gMouseX, gMouseY);
+        glUniform2f(glGetUniformLocation(gProgramGreen, "light_pos"), gMouseX, gMouseY);
 
         //draw
-        glMultiDrawElementsIndirect(GL_TRIANGLES, //type
+        
+        // glMultiDrawElementsIndirect(GL_TRIANGLES, //type
+        //     GL_UNSIGNED_INT, //indices represented as unsigned ints
+        //     (GLvoid*)0, //start with the first draw command
+        //     100, //draw 100 objects
+        //     0); //no stride, the draw commands are tightly packed
+        for(int j=0;j<100;j++)
+        {
+            if(j % 2 == 0)
+            {
+                glDisable(GL_BLEND);
+                glUseProgram(gProgramGreen);
+            } else
+            {
+                glEnable(GL_BLEND);
+                glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+                glUseProgram(gProgramRed);
+            }
+            glDrawElementsIndirect(GL_TRIANGLES, //type
             GL_UNSIGNED_INT, //indices represented as unsigned ints
-            (GLvoid*)0, //start with the first draw command
-            100, //draw 100 objects
-            0); //no stride, the draw commands are tightly packed
+            (GLvoid*)(0 + j*sizeof(SDrawElementsCommand)) //start with the first draw command
+            ); //no stride, the draw commands are tightly packed
+        }
 
         // glfw: swap buffers and poll IO events (keys pressed/released, mouse moved etc.)
         glfwSwapBuffers(window);
@@ -434,7 +495,7 @@ int main()
      // glfw: terminate, clearing all previously allocated GLFW resources.
     glfwTerminate();
     //Clean-up
-    glDeleteProgram(gProgram);
+    glDeleteProgram(gProgramGreen);
     glDeleteVertexArrays(1, &gVAO);
     glDeleteBuffers(1, &gVertexBuffer);
     glDeleteBuffers(1, &gElementBuffer);
