@@ -1,5 +1,5 @@
 //// Based on Ferran Soles: https://github.com/fsole/GLSamples/blob/master/src/MultidrawIndirect.cpp
-//// Modified by: Jakob T�rm� Ruhl
+//// Modified by: Jakob T鰎m� Ruhl
 
 #include <GL\glew.h>
 #include <GLFW/glfw3.h>
@@ -191,29 +191,28 @@ void GenerateGeometry()
 
     glGenVertexArrays(1, &gVAO);
     glBindVertexArray(gVAO);
-    //Create a vertex buffer object
+    //（1）创建顶点buffer
     glGenBuffers(1, &gVertexBuffer);
     glBindBuffer(GL_ARRAY_BUFFER, gVertexBuffer);
     glBufferData(GL_ARRAY_BUFFER, sizeof(Vertex2D)*vVertex.size(), vVertex.data(), GL_STATIC_DRAW);
 
-    //Specify vertex attributes for the shader
+    //（1.1）将上面的顶点buffer跟顶点的映射联系起来 position 和 uv
     glEnableVertexAttribArray(0);
     glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex2D), (GLvoid*)(offsetof(Vertex2D,x)));
     glEnableVertexAttribArray(1);
     glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex2D), (GLvoid*)(offsetof(Vertex2D,u)));
 
-    //Create an element buffer and populate it
-    int triangle_bytes = sizeof(unsigned int) * gTriangleIndex.size();
-    int quad_bytes = sizeof(unsigned int) * gQuadIndex.size();
+    //（1.2）创建Element buffer 指导怎么索引顶点 
+    int triangle_bytes = sizeof(unsigned int) * gTriangleIndex.size();//3个
+    int quad_bytes = sizeof(unsigned int) * gQuadIndex.size();//12个
     glGenBuffers(1, &gElementBuffer);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, gElementBuffer);
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, triangle_bytes + quad_bytes, NULL, GL_STATIC_DRAW);
 
-    glBufferSubData(GL_ELEMENT_ARRAY_BUFFER, 0, quad_bytes, gQuadIndex.data());
+    glBufferSubData(GL_ELEMENT_ARRAY_BUFFER, 0, quad_bytes, gQuadIndex.data());  //传入索引数据
     glBufferSubData(GL_ELEMENT_ARRAY_BUFFER, quad_bytes, triangle_bytes, gTriangleIndex.data());
 
-    //Setup per instance matrices
-    //Method 1. Use Vertex attributes and the vertex attrib divisor
+    //（2）创建实例的buffer
     glGenBuffers(1, &gMatrixBuffer);
     glBindBuffer(GL_ARRAY_BUFFER, gMatrixBuffer);
     glBufferData(GL_ARRAY_BUFFER, sizeof(vMatrix), vMatrix, GL_STATIC_DRAW);
@@ -227,13 +226,18 @@ void GenerateGeometry()
     glVertexAttribPointer(3 + 1, 4, GL_FLOAT, GL_FALSE, sizeof(Matrix), (GLvoid*)(offsetof(Matrix, b0)));
     glVertexAttribPointer(3 + 2, 4, GL_FLOAT, GL_FALSE, sizeof(Matrix), (GLvoid*)(offsetof(Matrix, c0)));
     glVertexAttribPointer(3 + 3, 4, GL_FLOAT, GL_FALSE, sizeof(Matrix), (GLvoid*)(offsetof(Matrix, d0)));
-    //Only apply one per instance
+    //注意这里可以设置实例间隔
     glVertexAttribDivisor(3 + 0, 1);
     glVertexAttribDivisor(3 + 1, 1);
     glVertexAttribDivisor(3 + 2, 1);
     glVertexAttribDivisor(3 + 3, 1);
+    //这个函数告诉OpenGL什么时候去更新顶点属性的内容到下个元素。
+    //它的第一个参数是提到的顶点属性，第二个参数是属性除数（attribute divisor）。
+    //默认属性除数是0，告诉OpenGL在顶点着色器的每次迭代更新顶点属性的内容。
+    //把这个属性设置为1，我们就是告诉OpenGL我们打算在开始渲染一个新的实例的时候更新顶点属性的内容。
+    //设置为2代表我们每2个实例更新内容，依此类推。
+    //把属性除数设置为1，我们可以高效地告诉OpenGL，location是2的顶点属性是一个实例数组（instanced array）。
 
-    //Method 2. Use Uniform Buffers. Not shown here
 }
 
 void GenerateArrayTexture()
