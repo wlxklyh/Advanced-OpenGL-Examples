@@ -463,13 +463,20 @@ int main()
         glUniform2f(glGetUniformLocation(gProgramGreen, "light_pos"), gMouseX, gMouseY);
 
         //draw
-        
+
+        //（1）这个是NultiDrawIndirect
+        // glEnable(GL_BLEND);
+        // glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+        // glUseProgram(gProgramRed);
+        // 
         // glMultiDrawElementsIndirect(GL_TRIANGLES, //type
         //     GL_UNSIGNED_INT, //indices represented as unsigned ints
         //     (GLvoid*)0, //start with the first draw command
         //     100, //draw 100 objects
         //     0); //no stride, the draw commands are tightly packed
-        for(int j=0;j<100;j++)
+
+        //（2）这个是Indirect Draw
+        for(int j = 0; j < 100; j++)
         {
             if(j % 2 == 0)
             {
@@ -481,10 +488,10 @@ int main()
                 glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
                 glUseProgram(gProgramRed);
             }
-            glDrawElementsIndirect(GL_TRIANGLES, //type
-            GL_UNSIGNED_INT, //indices represented as unsigned ints
-            (GLvoid*)(0 + j*sizeof(SDrawElementsCommand)) //start with the first draw command
-            ); //no stride, the draw commands are tightly packed
+            glDrawElementsIndirect(GL_TRIANGLES, 
+            GL_UNSIGNED_INT, 
+            (GLvoid*)(0 + j*sizeof(SDrawElementsCommand)) 
+            ); 
         }
 
         // glfw: swap buffers and poll IO events (keys pressed/released, mouse moved etc.)
