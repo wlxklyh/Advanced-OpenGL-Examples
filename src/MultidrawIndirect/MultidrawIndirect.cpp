@@ -399,6 +399,7 @@ int main()
     glGenBuffers(1, &gIndirectBuffer);
     // render loop
     int i = 0;
+    generateDrawCommands();
     while (!glfwWindowShouldClose(window))
     {
         // input
@@ -414,7 +415,7 @@ int main()
         // since we only have one that is already bounded
         //glBindVertexArray(gVAO);
 
-        generateDrawCommands();
+        
 
         //populate light uniform
         glUniform2f(glGetUniformLocation(gProgram, "light_pos"), gMouseX, gMouseY);
